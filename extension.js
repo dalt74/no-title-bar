@@ -18,8 +18,8 @@
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const Decoration = Me.imports.decoration;
-const Buttons = Me.imports.buttons;
-const AppMenu = Me.imports.app_menu;
+// const Buttons = Me.imports.buttons;
+// const AppMenu = Me.imports.app_menu;
 const Utils = Me.imports.utils;
 
 let decoration = null;
@@ -27,24 +27,26 @@ let buttons = null;
 let appMenu = null;
 
 function init() {
+    Utils.log("Init");
 }
 
 function enable() {
+    Utils.log("Enabling extension");
     let settings = Utils.enable();
 
-    buttons = new Buttons.Buttons(settings);
+//    buttons = new Buttons.Buttons(settings);
+//    appMenu = new AppMenu.AppMenu(settings);
     decoration = new Decoration.Decoration(settings);
-    appMenu = new AppMenu.AppMenu(settings);
 }
 
 function disable() {
-    appMenu.destroy();
-    appMenu = null;
+    Utils.log("Disabling extension");
+//    appMenu.destroy();
+//    appMenu = null;
     decoration.destroy();
     decoration = null;
-    buttons.destroy();
-    buttons = null;
-
+//    buttons.destroy();
+//    buttons = null;
     Utils.disable();
 }
 

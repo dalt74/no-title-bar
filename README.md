@@ -6,17 +6,11 @@ An extension for GNOME Shell that merges the activity bar and the title bar of m
 
 ```
 make install
-gnome-shell-extension-tool -e no-title-bar@franglais125.gmail.com
+gnome-extensions enable no-title-bar@jonaspoehler.de
 ```
 
 Restart GNOME Shell by pressing <kbd>Alt</kbd>+<kbd>F2</kbd> and entering <kbd>r</kbd>.
-
-## Wayland
-
-This extension does not work on native Wayland applications.
-The necessary support is simply not available upstream, and can't be fixed at the extension level.
-
-The extension will still work on applications making use of Xwayland.
+**Note**: GNOME Shell under Wayland doesn't support restarting, so you might need to login again instead.
 
 ## Dependencies
 
@@ -29,4 +23,5 @@ present on your system, these can be installed using:
 
 ## Credits
 
-This is based on the Pixel-Saver extension, by @deadalnix: https://github.com/deadalnix/pixel-saver
+This is based on the no-title-bar extension by franglais125 (https://github.com/franglais125/no-title-bar), which itself 
+is a fork of the Pixel-Saver extension, by @deadalnix: https://github.com/deadalnix/pixel-saver

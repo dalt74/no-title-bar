@@ -26,6 +26,13 @@ function buildPrefsWidget(){
     buildable.add_from_file( Me.dir.get_path() + '/Settings.ui' );
     let box = buildable.get_object('prefs_widget');
 
+    // Debug mode:
+    settings.bind('debug-mode',
+        buildable.get_object('debug_mode_switch'),
+        'active',
+        Gio.SettingsBindFlags.DEFAULT
+    );
+
     // Monitors:
     settings.bind('only-main-monitor',
         buildable.get_object('only_main_monitor_switch'),
@@ -34,6 +41,7 @@ function buildPrefsWidget(){
     );
 
     // Autohide button
+    /*
     settings.bind('hide-buttons',
         buildable.get_object('hide_buttons_switch'),
         'active',
@@ -82,10 +90,12 @@ function buildPrefsWidget(){
                   buildable.get_object('label_width_spinbutton'),
                   'sensitive',
                   Gio.SettingsBindFlags.DEFAULT);
+    */
 
     /*
      * Theme tab:
      * */
+    /*
     settings.bind('automatic-theme',
         buildable.get_object('automatic_theme_switch'),
         'active',
@@ -124,6 +134,7 @@ function buildPrefsWidget(){
             }
     }));
     buildable.get_object('theme_combobox').set_active_id(settings.get_string('theme') || 'default');
+    */
 
     /*
      * Ignore list tab:

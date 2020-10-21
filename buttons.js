@@ -13,31 +13,36 @@ const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const Convenience = Me.imports.convenience;
 const Utils = Me.imports.utils;
+const WindowState = Me.imports.decoration.WindowState;
 
 const display = Utils.display;
 
 const Position = {
-    BEFORE_NAME:        0,
-    AFTER_NAME:         1,
+    BEFORE_NAME: 0,
+    AFTER_NAME: 1,
     WITHIN_STATUS_AREA: 2,
     BEFORE_STATUS_AREA: 3,
-    AFTER_STATUS_AREA:  4,
-    HIDDEN:             5
+    AFTER_STATUS_AREA: 4,
+    HIDDEN: 5
 }
 
 // Functions for changing opacity (to act as auto-hiding)
 function b_hidden(box) {
-  Tweener.addTween(box,
-                   { opacity: 0,
-                     time: 1/6,
-                     transition: 'linear'});
+    Tweener.addTween(box,
+        {
+            opacity: 0,
+            time: 1 / 6,
+            transition: 'linear'
+        });
 }
 
 function b_shown(box) {
-  Tweener.addTween(box,
-                   { opacity: 255,
-                     time: 1/6,
-                     transition: 'linear'});
+    Tweener.addTween(box,
+        {
+            opacity: 255,
+            time: 1 / 6,
+            transition: 'linear'
+        });
 }
 
 /**
@@ -47,10 +52,9 @@ const DCONF_META_PATH = 'org.gnome.desktop.wm.preferences';
 
 let actors = [], boxes = [];
 
-var Buttons = new Lang.Class({
-    Name: 'NoTitleBar.Buttons',
+var Buttons = class {
 
-    _init: function(settings) {
+    constructor(settings) {
         this._extensionPath = Me.dir.get_path();
 
         this._wmCallbackIDs = [];
@@ -63,7 +67,7 @@ var Buttons = new Lang.Class({
 
         this._settingsId = this._settings.connect(
             'changed::button-position',
-            Lang.bind(this, function() {
+            Lang.bind(this, function () {
                 this._disable();
                 if (this._settings.get_enum('button-position') !== Position.HIDDEN)
                     this._enable();
@@ -72,15 +76,29 @@ var Buttons = new Lang.Class({
 
         this._buttonsForAllWinId = this._settings.connect(
             'changed::buttons-for-all-win',
-            Lang.bind(this, function() {
+            Lang.bind(this, function () {
                 this._updateVisibility();
             })
         );
 
         this._snappedId = this._settings.connect(
             'changed::buttons-for-snapped',
-            Lang.bind(this, function() {
+            Lang.bind(this, function () {
                 this._updateVisibility();
+            })
+        );
+
+        this._themeSwitchId = this._settings.connect(
+            'changed::theme',
+            Lang.bind(this, function () {
+                this._loadTheme();
+            })
+        );
+
+        this._autoThemeId = this._settings.connect(
+            'changed::automatic-theme',
+            Lang.bind(this, function () {
+                this._loadTheme();
             })
         );
 
@@ -88,23 +106,23 @@ var Buttons = new Lang.Class({
             this._enable();
         else
             this._disable();
-    },
+    }
 
-    _createButtons: function() {
+    _createButtons() {
         // Ensure we do not create buttons twice.
         this._destroyButtons();
 
         actors = [
-            new St.Bin({ style_class: 'box-bin'}),
-            new St.Bin({ style_class: 'box-bin'})
+            new St.Bin({style_class: 'box-bin'}),
+            new St.Bin({style_class: 'box-bin'})
         ];
 
         boxes = [
-            new St.BoxLayout({ style_class: 'button-box' }),
-            new St.BoxLayout({ style_class: 'button-box' })
+            new St.BoxLayout({style_class: 'button-box'}),
+            new St.BoxLayout({style_class: 'button-box'})
         ];
 
-        actors.forEach(function(actor, i) {
+        actors.forEach(function (actor, i) {
             actor.add_actor(boxes[i]);
         });
 
@@ -114,7 +132,7 @@ var Buttons = new Lang.Class({
         // Enable/disable "autohide" function when switch is changed from settings
         this._settings.connect(
             'changed::hide-buttons',
-            Lang.bind(this, function() {
+            Lang.bind(this, function () {
                 if (this._settings.get_boolean('hide-buttons')) {
                     this._enableButtonAutohide();
                 } else {
@@ -135,13 +153,13 @@ var Buttons = new Lang.Class({
         orders[0] = orders[0].split(',');
 
         // Check if it's actually exists, if not then create it
-        if(typeof orders[1] == 'undefined') orders[1] = '';
+        if (typeof orders[1] == 'undefined') orders[1] = '';
         orders[1] = orders[1].split(',');
 
         const callbacks = {
-            minimize : Lang.bind(this, this._minimize),
-            maximize : Lang.bind(this, this._maximize),
-            close    : Lang.bind(this, this._close)
+            minimize: Lang.bind(this, this._minimize),
+            maximize: Lang.bind(this, this._maximize),
+            close: Lang.bind(this, this._close)
         };
 
         for (let bi = 0; bi < boxes.length; ++bi) {
@@ -159,7 +177,7 @@ var Buttons = new Lang.Class({
                 }
 
                 let button = new St.Button({
-                    style_class: order[i]  + ' window-button',
+                    style_class: order[i] + ' window-button',
                     track_hover: true
                 });
 
@@ -177,13 +195,13 @@ var Buttons = new Lang.Class({
             if (boxes[1].get_children().length) {
                 switch (this._settings.get_enum('button-position')) {
                     case Position.BEFORE_NAME: {
-                        let activitiesBox = Main.panel.statusArea.activities.actor.get_parent()
+                        let activitiesBox = Main.panel.statusArea.activities.get_parent()
                         let leftBox = activitiesBox.get_parent();
                         leftBox.insert_child_above(this._container, activitiesBox);
                         break;
                     }
                     case Position.AFTER_NAME: {
-                        let appMenuBox = Main.panel.statusArea.appMenu.actor.get_parent()
+                        let appMenuBox = Main.panel.statusArea.appMenu.get_parent()
                         let leftBox = appMenuBox.get_parent();
                         leftBox.insert_child_above(this._container, appMenuBox);
                         break;
@@ -203,11 +221,11 @@ var Buttons = new Lang.Class({
             this._updateVisibility();
             return false;
         }));
-    },
+    }
 
-    _destroyButtons: function() {
+    _destroyButtons() {
         if (actors) {
-            actors.forEach(function(actor, i) {
+            actors.forEach(function (actor, i) {
                 actor.destroy();
             });
         }
@@ -218,10 +236,11 @@ var Buttons = new Lang.Class({
         if (this._container) {
             this._disableButtonAutohide();
             this._container.destroy();
+            this._container = null
         }
-    },
+    }
 
-    _enableButtonAutohide: function() {
+    _enableButtonAutohide() {
         this._disableButtonAutohide();
 
         if (this._container) {
@@ -230,9 +249,9 @@ var Buttons = new Lang.Class({
 
         this._containerEnterId = this._container.connect('enter-event', b_shown);
         this._containerLeaveId = this._container.connect('leave-event', b_hidden);
-    },
+    }
 
-    _disableButtonAutohide: function() {
+    _disableButtonAutohide() {
         if (this._container) {
             this._container.opacity = 255;
         }
@@ -245,31 +264,31 @@ var Buttons = new Lang.Class({
             this._container.disconnect(this._containerLeaveId);
             this._containerLeaveId = 0;
         }
-    },
+    }
 
     /**
      * Buttons actions
      */
-    _leftclick: function(callback) {
-        return function(actor, event) {
+    _leftclick(callback) {
+        return function (actor, event) {
             if (event.get_button() !== 1) {
                 return null;
             }
 
             return callback(actor, event);
         }
-    },
+    }
 
-    _minimize: function() {
+    _minimize() {
         let win = Utils.getWindow();
         if (!win || win.minimized) {
             return;
         }
 
         win.minimize();
-    },
+    }
 
-    _maximize: function() {
+    _maximize() {
         let win = Utils.getWindow();
         if (!win) {
             return;
@@ -283,24 +302,33 @@ var Buttons = new Lang.Class({
         }
 
         win.activate(global.get_current_time());
-    },
+    }
 
-    _close: function() {
+    _close() {
         let win = Utils.getWindow();
         if (!win) {
             return;
         }
 
         win.delete(global.get_current_time());
-    },
+    }
 
     /**
      * Theming
      */
-    _loadTheme: function() {
+    _loadTheme() {
         let theme;
         if (this._settings.get_boolean('automatic-theme')) {
-            theme = Gtk.Settings.get_default().gtk_theme_name;
+            let settings_default = Gtk.Settings.get_default();
+            // We might get here to early. If null, reschedule for a later time and try again
+            if (settings_default != null) {
+                theme = settings_default.gtk_theme_name;
+            } else {
+                Mainloop.idle_add(Lang.bind(this, function () {
+                    this._loadTheme();
+                }));
+                return;
+            }
         } else {
             theme = this._settings.get_string('theme');
         }
@@ -322,33 +350,32 @@ var Buttons = new Lang.Class({
         St.ThemeContext.get_for_stage(global.stage).get_theme().load_stylesheet(cssFile);
 
         // Force style update.
-        actors.forEach(function(actor) {
-            actor.grab_key_focus();
-        });
+        Main.loadTheme();
 
         this._activeCSS = cssPath;
-    },
+    }
 
-    _unloadTheme: function() {
+    _unloadTheme() {
         if (this._activeCSS) {
             let cssFile = Gio.file_new_for_path(this._activeCSS);
             St.ThemeContext.get_for_stage(global.stage).get_theme().unload_stylesheet(cssFile);
             this._activeCSS = false;
         }
-    },
+    }
 
     /**
      * callbacks
      */
-    _updateVisibility: function() {
+    _updateVisibility() {
         // If we have a window to control, then we show the buttons.
         let visible = !Main.overview.visible;
         if (visible) {
             visible = false;
             let win = Utils.getWindow();
             if (win) {
-                visible = win.decorated || this._settings.get_boolean('buttons-for-all-win');
-
+                visible = (win._noTitleBarOriginalState !== undefined
+                    && win._noTitleBarOriginalState === WindowState.DEFAULT)
+                    || this._settings.get_boolean('buttons-for-all-win');
                 if (visible) {
                     visible = !Utils.isWindowIgnored(this._settings, win);
 
@@ -360,7 +387,9 @@ var Buttons = new Lang.Class({
             }
         }
 
-        actors.forEach(function(actor, i) {
+        Utils.log_debug(`Visibility updates of buttons: now is ${visible}`);
+
+        actors.forEach(function (actor, i) {
             if (!boxes[i].get_children().length) {
                 return;
             }
@@ -373,13 +402,14 @@ var Buttons = new Lang.Class({
         });
 
         return false;
-    },
-    _enableDragOnPanel: function() {
+    }
+
+    _enableDragOnPanel() {
         let settings = this._settings;
 
         this._originalFunction = Main.panel._onButtonPress;
 
-        Main.panel._onButtonPress = function(actor, event) {
+        Main.panel._onButtonPress = function (actor, event) {
             if (Main.modalCount > 0)
                 return Clutter.EVENT_PROPAGATE;
 
@@ -396,7 +426,7 @@ var Buttons = new Lang.Class({
                 return Clutter.EVENT_PROPAGATE;
 
             let dragWindow = focusWindow.is_attached_dialog() ? focusWindow.get_transient_for()
-                                                              : focusWindow;
+                : focusWindow;
             if (!dragWindow)
                 return Clutter.EVENT_PROPAGATE;
 
@@ -404,36 +434,36 @@ var Buttons = new Lang.Class({
             let [stageX, stageY] = event.get_coords();
 
             let allowDrag = dragWindow.maximized_vertically &&
-                            stageX > rect.x && stageX < rect.x + rect.width;
+                stageX > rect.x && stageX < rect.x + rect.width;
 
             if (!allowDrag)
                 return Clutter.EVENT_PROPAGATE;
 
-            global.display.begin_grab_op(display,
-                                         dragWindow,
-                                         Meta.GrabOp.MOVING,
-                                         false, /* pointer grab */
-                                         true, /* frame action */
-                                         button,
-                                         event.get_state(),
-                                         event.get_time(),
-                                         stageX, stageY);
+            global.display.begin_grab_op(dragWindow,
+                Meta.GrabOp.MOVING,
+                false, /* pointer grab */
+                true, /* frame action */
+                button,
+                event.get_state(),
+                event.get_time(),
+                stageX, stageY);
 
             return Clutter.EVENT_STOP;
         };
 
-        Main.panel.actor.connect('button-press-event', Lang.bind(Main.panel, Main.panel._onButtonPress));
-    },
-    _disableDragOnPanel: function() {
+        Main.panel.connect('button-press-event', Lang.bind(Main.panel, Main.panel._onButtonPress));
+    }
+
+    _disableDragOnPanel() {
         if (!this._originalFunction) {
             return;
         }
 
         Main.panel._onButtonPress = this._originalFunction;
-        Main.panel.actor.connect('button-press-event', Lang.bind(Main.panel, Main.panel._onButtonPress));
-    },
+        Main.panel.connect('button-press-event', Lang.bind(Main.panel, Main.panel._onButtonPress));
+    }
 
-    _enable: function() {
+    _enable() {
         this._loadTheme();
         this._createButtons();
 
@@ -448,21 +478,33 @@ var Buttons = new Lang.Class({
 
         this._wmCallbackIDs = this._wmCallbackIDs.concat(Utils.onSizeChange(Lang.bind(this, this._updateVisibility)));
 
-        this._themeCallbackID = Gtk.Settings.get_default().connect('notify::gtk-theme-name', Lang.bind(this, this._loadTheme));
+        this._enableThemeCallback();
 
         this._globalCallBackID = display.connect('restacked', Lang.bind(this, this._updateVisibility));
 
         this._enableDragOnPanel();
 
         this._isEnabled = true;
-    },
+    }
 
-    _disable: function() {
-        this._wmCallbackIDs.forEach(function(id) {
+    _enableThemeCallback() {
+        Mainloop.idle_add(Lang.bind(this, function () {
+            let settings = Gtk.Settings.get_default();
+            // We might get here to early. If null, reschedule for a later time and try again
+            if (settings != null) {
+                this._themeCallbackID = settings.connect('notify::gtk-theme-name', Lang.bind(this, this._loadTheme));
+            } else {
+                this._enableThemeCallback();
+            }
+        }));
+    }
+
+    _disable() {
+        this._wmCallbackIDs.forEach(function (id) {
             global.window_manager.disconnect(id);
         });
 
-        this._overviewCallbackIDs.forEach(function(id) {
+        this._overviewCallbackIDs.forEach(function (id) {
             Main.overview.disconnect(id);
         });
 
@@ -485,9 +527,9 @@ var Buttons = new Lang.Class({
         this._disableDragOnPanel();
 
         this._isEnabled = false;
-    },
+    }
 
-    destroy: function() {
+    destroy() {
         if (this._isEnabled)
             this._disable();
 
@@ -505,5 +547,15 @@ var Buttons = new Lang.Class({
             this._settings.disconnect(this._snappedId);
             this._snappedId = 0;
         }
+
+        if (this._themeSwitchId) {
+            this._settings.disconnect(this._themeSwitchId);
+            this._themeSwitchId = 0;
+        }
+
+        if (this._autoThemeId) {
+            this._settings.disconnect(this._autoThemeId);
+            this._autoThemeId = 0;
+        }
     }
-});
+}
